@@ -1,103 +1,302 @@
-import Image from "next/image";
+"use client";
+import { ModeToggle } from "@/components/mode-toggle";
+import { Button } from "@/components/ui/button";
+import { GoogleMap, LoadScript, Marker } from "@react-google-maps/api";
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogClose,
+} from "@/components/ui/dialog";
+import Link from "next/link";
+import { useTheme } from "next-themes";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+// Define a type for a person
+interface Person {
+  id: number;
+  name: string;
+  lastName: string;
+  age: number;
+  address: string;
+  phone: string;
+  dni: string;
+  position: { lat: number; lng: number };
+}
+
+export function Navbar() {
+  return (
+    <nav className="flex gap-6 p-4 border-b border-border">
+      <Link href="/home" className="font-semibold hover:underline">
+        Home
+      </Link>
+      <Link href="/information" className="font-semibold hover:underline">
+        Information
+      </Link>
+      <Link href="/settings" className="font-semibold hover:underline">
+        Settings
+      </Link>
+      <Link href="/user" className="font-semibold hover:underline">
+        User
+      </Link>
+    </nav>
+  );
+}
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  const { theme } = useTheme();
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  // Only people in Lima
+  const people: Person[] = [
+    {
+      id: 1,
+      name: "Juan",
+      lastName: "Perez",
+      age: 68,
+      address: "Av. Arequipa 1234, Lima",
+      phone: "+51 987654321",
+      dni: "12345678",
+      position: { lat: -12.0464, lng: -77.0428 }, // Lima
+    },
+    {
+      id: 2,
+      name: "Maria",
+      lastName: "Lopez",
+      age: 64,
+      address: "Jr. Lampa 567, Lima",
+      phone: "+51 912345678",
+      dni: "87654321",
+      position: { lat: -12.05, lng: -77.033 }, // Lima
+    },
+    {
+      id: 3,
+      name: "Carlos",
+      lastName: "Sanchez",
+      age: 81,
+      address: "Calle Piura 890, Lima",
+      phone: "+51 923456789",
+      dni: "23456789",
+      position: { lat: -12.0432, lng: -77.0282 }, // Lima
+    },
+    {
+      id: 4,
+      name: "Ana",
+      lastName: "Ramirez",
+      age: 85,
+      address: "Av. Grau 321, Lima",
+      phone: "+51 934567890",
+      dni: "34567890",
+      position: { lat: -12.055, lng: -77.045 }, // Lima
+    },
+    {
+      id: 5,
+      name: "Luis",
+      lastName: "Torres",
+      age: 60,
+      address: "Jr. Loreto 456, Lima",
+      phone: "+51 945678901",
+      dni: "45678901",
+      position: { lat: -12.048, lng: -77.03 }, // Lima
+    },
+    {
+      id: 6,
+      name: "Sofia",
+      lastName: "Vargas",
+      age: 92,
+      address: "Av. Bolognesi 789, Lima",
+      phone: "+51 956789012",
+      dni: "56789012",
+      position: { lat: -12.04, lng: -77.02 }, // Lima
+    },
+  ];
+
+  // State for which marker's modal is open
+  const [selected, setSelected] = useState<Person | null>(null);
+  const [section, setSection] = useState<
+    "home" | "information" | "settings" | "user"
+  >("home");
+
+  // Map container style
+  const containerStyle = {
+    width: "100%",
+    height: "100%",
+  };
+
+  // Center in Lima
+  const center = { lat: -12.0464, lng: -77.0428 };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between p-4 border-b border-border h-24">
+        <img
+          src="logo.png"
+          alt="Logo"
+          className="w-48 h-auto hidden md:block"
+        />
+        <img src="logoMovil.png" alt="Logo" className="w-16 h-auto md:hidden" />
+        <div>
+          <ModeToggle />
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+      </div>
+
+      <div className="h-[calc(100vh-160px)]">
+        {section === "home" && (
+          <div className="h-full">
+            <LoadScript googleMapsApiKey={apiKey || ""}>
+              <GoogleMap
+                mapContainerStyle={containerStyle}
+                center={center}
+                zoom={13}
+              >
+                {people.map((person) => (
+                  <Marker
+                    key={person.id}
+                    position={person.position}
+                    onClick={() => setSelected(person)}
+                  />
+                ))}
+              </GoogleMap>
+            </LoadScript>
+
+            <Dialog
+              open={!!selected}
+              onOpenChange={(open) => !open && setSelected(null)}
+            >
+              <DialogContent>
+                {selected && (
+                  <>
+                    <DialogHeader>
+                      <DialogTitle>Detalles de la persona</DialogTitle>
+                      <DialogDescription>
+                        <strong>
+                          {selected.name} {selected.lastName}
+                        </strong>
+                        <br />
+                        Edad: {selected.age}
+                        <br />
+                        Dirección: {selected.address}
+                        <br />
+                        Teléfono: {selected.phone}
+                        <br />
+                        DNI: {selected.dni}
+                      </DialogDescription>
+                    </DialogHeader>
+                  </>
+                )}
+              </DialogContent>
+            </Dialog>
+          </div>
+        )}
+        {section === "information" && (
+          <div className="p-8 space-y-4">
+            <h2 className="text-2xl font-bold mb-4">Información</h2>
+            <p>
+              Bienvenido a <strong>Nostos</strong>, una aplicación diseñada
+              para ayudar a localizar y asistir a personas mayores en Lima.
+            </p>
+            <ul className="list-disc pl-6">
+              <li>
+                Visualiza en el mapa la ubicación de personas registradas.
+              </li>
+              <li>
+                Haz clic en un marcador para ver detalles y datos de contacto.
+              </li>
+              <li>
+                La información es confidencial y solo accesible para usuarios
+                autorizados.
+              </li>
+            </ul>
+            <p>
+              Si tienes dudas o necesitas soporte, contacta a nuestro equipo a
+              través de la sección de usuario.
+            </p>
+          </div>
+        )}
+        {section === "settings" && (
+          <div className="p-8 space-y-4">
+            <h2 className="text-2xl font-bold mb-4">Configuración</h2>
+            <div>
+              <label className="block font-semibold mb-2">Tema</label>
+              <ModeToggle />
+            </div>
+            <div>
+              <label className="block font-semibold mb-2">Notificaciones</label>
+              <input type="checkbox" id="notifications" className="mr-2" />
+              <label htmlFor="notifications">Activar notificaciones</label>
+            </div>
+            <div>
+              <label className="block font-semibold mb-2">Idioma</label>
+              <select className="border rounded px-2 py-1">
+                <option>Español</option>
+                <option>English</option>
+              </select>
+            </div>
+          </div>
+        )}
+        {section === "user" && (
+          <div className="p-8 space-y-4">
+            <h2 className="text-2xl font-bold mb-4">Perfil de Usuario</h2>
+            <div className="flex items-center gap-4">
+              <Avatar>
+                <AvatarImage src="https://github.com/shadcn.png" />
+                <AvatarFallback>CN</AvatarFallback>
+              </Avatar>
+              <div>
+                <div className="font-semibold">Nombre: Juan Pérez</div>
+                <div className="text-sm text-muted-foreground">
+                  Correo: juan.perez@email.com
+                </div>
+              </div>
+            </div>
+            <div className="mt-4">
+              <Button variant="outline">Editar perfil</Button>
+              <Button variant="destructive" className="ml-4">
+                Cerrar sesión
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Navigation Bar */}
+      <nav className="flex gap-6 p-4 border-t border-border justify-around h-16 bg-background">
+        <Button
+          onClick={() => setSection("home")}
+          className={section === "home" ? "font-bold" : ""}
+          variant={theme === "dark" && section === "home" ? "default" : "ghost"}
         >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+          <img src="home.png" alt="Home" className="w-4 h-4" />
+          Home
+        </Button>
+        <Button
+          onClick={() => setSection("user")}
+          className={section === "user" ? "font-bold" : ""}
+          variant={theme === "dark" && section === "home" ? "default" : "ghost"}
         >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+          <img src="user.png" alt="User" className="w-4 h-4" />
+          Usuario
+        </Button>
+        <Button
+          onClick={() => setSection("information")}
+          className={section === "information" ? "font-bold" : ""}
+          variant={theme === "dark" && section === "home" ? "default" : "ghost"}
         >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          <img src="info.png" alt="Info" className="w-4 h-4" />
+          Información
+        </Button>
+        <Button
+          onClick={() => setSection("settings")}
+          className={section === "settings" ? "font-bold" : ""}
+          variant={theme === "dark" && section === "home" ? "default" : "ghost"}
+        >
+          <img src="settings.png" alt="Settings" className="w-4 h-4" />
+          Configuración
+        </Button>
+      </nav>
     </div>
   );
 }
