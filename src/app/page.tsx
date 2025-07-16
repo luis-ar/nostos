@@ -27,25 +27,6 @@ interface Person {
   position: { lat: number; lng: number };
 }
 
-export function Navbar() {
-  return (
-    <nav className="flex gap-6 p-4 border-b border-border">
-      <Link href="/home" className="font-semibold hover:underline">
-        Home
-      </Link>
-      <Link href="/information" className="font-semibold hover:underline">
-        Information
-      </Link>
-      <Link href="/settings" className="font-semibold hover:underline">
-        Settings
-      </Link>
-      <Link href="/user" className="font-semibold hover:underline">
-        User
-      </Link>
-    </nav>
-  );
-}
-
 export default function Home() {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
   const { theme } = useTheme();
