@@ -14,6 +14,7 @@ import {
 import Link from "next/link";
 import { useTheme } from "next-themes";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { QRCodeCanvas } from "qrcode.react";
 
 // Define a type for a person
 interface Person {
@@ -153,17 +154,35 @@ export default function Home() {
                     <DialogHeader>
                       <DialogTitle>Detalles de la persona</DialogTitle>
                       <DialogDescription>
-                        <strong>
-                          {selected.name} {selected.lastName}
-                        </strong>
-                        <br />
-                        Edad: {selected.age}
-                        <br />
-                        Dirección: {selected.address}
-                        <br />
-                        Teléfono: {selected.phone}
-                        <br />
-                        DNI: {selected.dni}
+                        <div className="flex flex-col items-center">
+                          <QRCodeCanvas
+                            value={JSON.stringify({
+                              nombre: selected.name,
+                              apellido: selected.lastName,
+                              edad: selected.age,
+                              direccion: selected.address,
+                              telefono: selected.phone,
+                              dni: selected.dni,
+                            })}
+                            size={180}
+                            level="H"
+                            includeMargin={true}
+                          />
+                          {/* Optionally, show the data below the QR */}
+                          {/* <div className="mt-4 text-center">
+                            <strong>
+                              {selected.name} {selected.lastName}
+                            </strong>
+                            <br />
+                            Edad: {selected.age}
+                            <br />
+                            Dirección: {selected.address}
+                            <br />
+                            Teléfono: {selected.phone}
+                            <br />
+                            DNI: {selected.dni}
+                          </div> */}
+                        </div>
                       </DialogDescription>
                     </DialogHeader>
                   </>
@@ -176,8 +195,8 @@ export default function Home() {
           <div className="p-8 space-y-4">
             <h2 className="text-2xl font-bold mb-4">Información</h2>
             <p>
-              Bienvenido a <strong>Nostos</strong>, una aplicación diseñada
-              para ayudar a localizar y asistir a personas mayores en Lima.
+              Bienvenido a <strong>Nostos</strong>, una aplicación diseñada para
+              ayudar a localizar y asistir a personas mayores en Lima.
             </p>
             <ul className="list-disc pl-6">
               <li>
